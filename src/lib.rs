@@ -1,11 +1,10 @@
 use std::num::Wrapping;
-use std::env::args;
-use std::fs::File;
-use std::io::{Read, Write, stdout, stdin};
+use std::io::{Read, Write};
 
-const TAPE_SIZE: usize = 30000;
+pub const TAPE_SIZE: usize = 30000;
 
-enum BrainToken {
+#[derive(Clone)]
+pub enum BrainToken {
     Add,
     Subtract,
     Left,
@@ -17,7 +16,7 @@ enum BrainToken {
     None,
 }
 
-fn lex(mut r: impl Read) -> Vec<BrainToken> {
+pub fn lex(mut r: impl Read) -> Vec<BrainToken> {
     let mut s = String::new();
     r.read_to_string(&mut s)
         .expect("Error reading from source");
@@ -26,6 +25,7 @@ fn lex(mut r: impl Read) -> Vec<BrainToken> {
     let mut opens = Vec::new();
     let mut index: usize = 0;
     for c in s.chars() {
+        let mut advance = true;
         match c {
             '+' => tokens.push(BrainToken::Add),
             '-' => tokens.push(BrainToken::Subtract),
@@ -43,9 +43,11 @@ fn lex(mut r: impl Read) -> Vec<BrainToken> {
                 tokens[open] = BrainToken::OpenLoop(index);
                 tokens.push(BrainToken::CloseLoop(open));
             }
-            _ => index -= 1,
+            _ => advance = false,
         }
-        index += 1;
+        if advance {
+            index += 1;
+        }
     }
     if !opens.is_empty() {
         panic!("Mismatched [");
@@ -53,7 +55,55 @@ fn lex(mut r: impl Read) -> Vec<BrainToken> {
     tokens
 }
 
-fn run(tokens: Vec<BrainToken>, mut inp: impl Read, mut out: impl Write) {
+pub fn compile(tokens: Vec<BrainToken>) -> String {
+    let mut code = String::new();
+    code.push_str(stringify!{
+        const TAPE_SIZE: usize = 30000;
+        use std::num::Wrapping;
+        use std::io::{Read, Write, stdin, stdout};
+        let mut next_char = [0; 1];
+        let mut tape = [Wrapping(0u8); TAPE_SIZE];
+        let mut ptr = 0;
+    });
+    for token in tokens {
+        match token {
+            BrainToken::Add => code.push_str(stringify!{
+                tape[ptr] += Wrapping(1);
+            }),
+            BrainToken::Subtract => code.push_str(stringify!{
+                tape[ptr] -= Wrapping(1);
+            }),
+            BrainToken::Left => code.push_str(stringify!{
+                ptr -= 1;
+            }),
+            BrainToken::Right => code.push_str(stringify!{
+                ptr += 1;
+            }),
+            BrainToken::Read => code.push_str(stringify!{
+                stdin().read_exact(&mut next_char)
+                    .expect("Error reading next char");
+                tape[ptr] = Wrapping(next_char[0]);
+            }),
+            BrainToken::Write => code.push_str(stringify!{
+                stdout().write_fmt(format_args!("{}", tape[ptr].0 as char))
+                    .expect("Error writing to output");
+                stdout().flush()
+                    .expect("Error flushing output");
+            }),
+            BrainToken::OpenLoop(_) => {
+                code.push_str(stringify!{
+                    while tape[ptr] != Wrapping(0) 
+                });
+                code.push_str("{");
+            },
+            BrainToken::CloseLoop(_) => code.push_str("}"),
+            _ => (),
+        }
+    }
+    format!("fn main() {{{}}}", code)
+}
+
+pub fn run(tokens: Vec<BrainToken>, mut inp: impl Read, mut out: impl Write) {
     let mut next_char = [0; 1];
     let mut tape = [Wrapping(0); TAPE_SIZE];
     let mut ptr = 0;
@@ -93,15 +143,4 @@ fn run(tokens: Vec<BrainToken>, mut inp: impl Read, mut out: impl Write) {
             break;
         }
     }
-}
-
-fn main() {
-    let mut args = args();
-    let file_name = args.nth(1)
-        .expect("No file provided");
-    let file = File::open(&file_name)
-        .expect("Error opening file");
-    
-    let tokens = lex(file);
-    run(tokens, stdin(), stdout());
 }
