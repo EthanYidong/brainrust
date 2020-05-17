@@ -11,8 +11,8 @@ fn main() {
     let matches = clap_app!(bfrust =>
         (version: "0.1")
         (author: "Ethan Tang <ethanyidong@gmail.com>")
-        (about: "A brainfuck interpreter written in Rust")
-        (@arg FILE: * "The brainfuck file to run")
+        (about: "A brainf*ck interpreter written in Rust")
+        (@arg FILE: * "The brainf*ck file to run")
         (@arg compile: -c --compile +takes_value "Compile to a binary rather than run")
         
     )

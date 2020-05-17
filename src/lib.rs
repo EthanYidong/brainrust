@@ -81,14 +81,14 @@ pub fn compile(tokens: Vec<BrainToken>) -> String {
             }),
             BrainToken::Read => code.push_str(stringify!{
                 stdin().read_exact(&mut next_char)
-                    .expect("Error reading next char");
+                    .unwrap();
                 tape[ptr] = Wrapping(next_char[0]);
             }),
             BrainToken::Write => code.push_str(stringify!{
                 stdout().write_fmt(format_args!("{}", tape[ptr].0 as char))
-                    .expect("Error writing to output");
+                    .unwrap();
                 stdout().flush()
-                    .expect("Error flushing output");
+                    .unwrap();
             }),
             BrainToken::OpenLoop(_) => {
                 code.push_str(stringify!{

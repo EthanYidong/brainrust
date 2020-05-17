@@ -3,6 +3,12 @@ name = "brainrust"
 version = "0.1.0"
 authors = ["Ethan Tang <ethanyidong@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "A brainf*ck interpreter written in rust"
+homepage = "https://github.com/EthanYidong/brainrust"
+documentation = "https://github.com/EthanYidong/brainrust"
+repository = "https://github.com/EthanYidong/brainrust"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
